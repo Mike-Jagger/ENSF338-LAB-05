@@ -1,96 +1,100 @@
-import timeit
 import random
+import timeit
 import matplotlib.pyplot as plt
 
-# Task 1: Implementing ArrayQueue and LinkedListQueue
+# Array-based Queue Implementation
 class ArrayQueue:
     def __init__(self):
-        self.queue = []
+        self.items = []
 
     def enqueue(self, item):
-        self.queue.insert(0, item)
+        self.items.insert(0, item)
 
     def dequeue(self):
-        if self.queue:
-            return self.queue.pop()
+        if not self.is_empty():
+            return self.items.pop()
+        else:
+            raise IndexError("dequeue from empty queue")
+
+    def is_empty(self):
+        return len(self.items) == 0
+
+# Singly-Linked List-based Queue Implementation
+class Node:
+    def __init__(self, value):
+        self.value = value
+        self.next = None
 
 class LinkedListQueue:
-    class Node:
-        def __init__(self, data=None):
-            self.data = data
-            self.next = None
-
     def __init__(self):
         self.head = None
         self.tail = None
 
     def enqueue(self, item):
-        new_node = self.Node(item)
-        if not self.head:
-            self.head = new_node
-            self.tail = new_node
-        else:
-            new_node.next = self.head
+        new_node = Node(item)
+        if self.tail is not None:
+            self.tail.next = new_node
+        self.tail = new_node
+        if self.head is None:
             self.head = new_node
 
     def dequeue(self):
-        if not self.head:
-            return None  # Queue is empty
-        data = self.tail.data
-        if self.head == self.tail:
-            self.head = None
-            self.tail = None
+        if self.head is not None:
+            value = self.head.value
+            self.head = self.head.next
+            if self.head is None:
+                self.tail = None
+            return value
         else:
-            current = self.head
-            while current.next != self.tail:
-                current = current.next
-            self.tail = current
-            self.tail.next = None
-        return data
+            raise IndexError("dequeue from empty queue")
 
-# Task 3: Generate random lists of tasks and print the result
-def generate_tasks():
+    def is_empty(self):
+        return self.head is None
+
+# Task Generation Function
+def generate_tasks(n=10000, enqueue_prob=0.7):
     tasks = []
-    for _ in range(10000):
-        task = random.choices(['enqueue', 'dequeue'], weights=[0.7, 0.3])[0]
-        tasks.append(task)
+    for _ in range(n):
+        if random.random() < enqueue_prob:
+            tasks.append(('enqueue', random.randint(1, 100)))  # Random value for enqueue
+        else:
+            tasks.append(('dequeue', None))  # No value needed for dequeue
     return tasks
 
-# Task 4: Measure performance of both implementations
-def measure_performance(queue_impl, tasks):
-    queue = queue_impl()
-    start_time = timeit.default_timer()
+# Function to Execute Tasks on Queue
+def execute_tasks(queue, tasks):
     for task in tasks:
-        if task == 'enqueue':
-            queue.enqueue(1)  # Dummy data for enqueue operation
-        else:
-            queue.dequeue()
-    end_time = timeit.default_timer()
-    return end_time - start_time
+        if task[0] == 'enqueue':
+            queue.enqueue(task[1])
+        elif task[0] == 'dequeue':
+            if not queue.is_empty():
+                queue.dequeue()
 
-# Task 5: Plot the distribution of times and discuss the results
-def plot_distribution(array_times, linked_list_times):
-    plt.hist(array_times, bins=20, alpha=0.5, label='ArrayQueue')
-    plt.hist(linked_list_times, bins=20, alpha=0.5, label='LinkedListQueue')
-    plt.legend(loc='upper right')
-    plt.xlabel('Time (seconds)')
-    plt.ylabel('Frequency')
-    plt.title('Distribution of Queue Implementation Performance')
-    plt.show()
+# Performance Measurement Function
+def measure_performance(queue_class, task_lists):
+    times = []
+    for tasks in task_lists:
+        queue = queue_class()  # Create a new queue instance for each task list
+        start_time = timeit.default_timer()
+        execute_tasks(queue, tasks)
+        end_time = timeit.default_timer()
+        times.append(end_time - start_time)
+    return times
 
-# Task 2: Perform tasks 4 and 5 five times
-for _ in range(5):
-    array_times = []
-    linked_list_times = []
-    for _ in range(100):
-        tasks = generate_tasks()
-        array_time = measure_performance(ArrayQueue, tasks)
-        linked_list_time = measure_performance(LinkedListQueue, tasks)
-        array_times.append(array_time)
-        linked_list_times.append(linked_list_time)
+# Generate 100 lists of tasks
+task_lists = [generate_tasks() for _ in range(100)]
 
-    avg_array_time = sum(array_times) / len(array_times)
-    avg_linked_list_time = sum(linked_list_times) / len(linked_list_times)
-    print("Average time for ArrayQueue:", avg_array_time)
-    print("Average time for LinkedListQueue:", avg_linked_list_time)
-    plot_distribution(array_times, linked_list_times)
+# Measure performance
+array_queue_times = measure_performance(ArrayQueue, task_lists)
+linked_list_queue_times = measure_performance(LinkedListQueue, task_lists)
+
+# Plotting Performance Distribution
+plt.figure(figsize=(10, 6))
+plt.hist(array_queue_times, bins=20, alpha=0.5, label='ArrayQueue')
+plt.hist(linked_list_queue_times, bins=20, alpha=0.5, label='LinkedListQueue')
+plt.xlabel('Time (seconds)')
+plt.ylabel('Frequency')
+plt.title('Performance Distribution of Queue Implementations')
+plt.legend()
+plt.grid(True)
+plt.show()
