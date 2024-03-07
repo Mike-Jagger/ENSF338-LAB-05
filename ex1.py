@@ -1,47 +1,81 @@
-# Function to check if a character is a digit
-def is_digit(char):
-  return char.isdigit()
+class Stack:
+    def __init__(self):
+        self.items = []
 
-# Function to check if a character is an operand
-def is_operand(char):
-  return char in "+-*/"
+    def push(self, item):
+        self.items.append(item)
 
-# Main parsing function
-def parse_expression(expression):
-  stack = []
-  for char in expression:
-    if is_digit(char):
-      # Add number to the stack
-      number = int(char)
-      stack.append(number)
-    elif is_operand(char):
-      # Pop two elements from the stack, perform operation, and push result back
-      operand2 = stack.pop()
-      operand1 = stack.pop()
-      result = perform_operation(char, operand1, operand2)
-      stack.append(result)
-    # Handle errors: invalid characters, unbalanced parentheses, etc.
-  # Check if the stack contains only one element (final result)
-  if len(stack) == 1:
+    def pop(self):
+        if not self.is_empty():
+            return self.items.pop()
+        else:
+            return None
+
+    def peek(self):
+        if not self.is_empty():
+            return self.items[-1]
+        else:
+            return None
+
+    def is_empty(self):
+        return len(self.items) == 0
+
+def evaluate_expression(expression):
+    stack = Stack()
+    tokens = expression.split()
+    for token in tokens:
+        if token.isdigit() or (token[0] == '-' and token[1:].isdigit()):
+            stack.push(int(token))
+        elif token in ['+', '-', '*', '/']:
+            stack.push(token)
+        elif token == '(':
+            continue
+        elif token == ')':
+            subexpression_result = evaluate_subexpression(stack)
+            if subexpression_result is not None:
+                stack.push(subexpression_result)
+            else:
+                return "Error: Invalid expression format"
     return stack.pop()
-  else:
-    # Handle errors: unprocessed elements in the stack
-    raise ValueError("Invalid expression")
 
-# Function to perform the operation based on the operand
-def perform_operation(operand, operand1, operand2):
-  if operand == "+":
-    return operand1 + operand2
-  # Implement similar logic for other operands
-  # ...
-  else:
-    raise ValueError("Unsupported operand")
+def evaluate_subexpression(stack):
+    operator = stack.pop()
+    if operator not in ['+', '-', '*', '/']:
+        return None
+    
+    operands = []
+    while isinstance(stack.peek(), int):
+        operands.append(stack.pop())
+    operands.reverse()
 
-# Get expression string from command line arguments (replace with actual method)
-expression_string = "10 + 20 * 3"
+    if len(operands) < 2:
+        return None
+    
+    if operator == '+':
+        return sum(operands)
+    elif operator == '-':
+        return operands[0] - sum(operands[1:])
+    elif operator == '*':
+        result = 1
+        for operand in operands:
+            result *= operand
+        return result
+    elif operator == '/':
+        result = operands[0]
+        for operand in operands[1:]:
+            if operand == 0:
+                return "Error: Division by zero"
+            result /= operand
+        return result
+    else:
+        return None
 
-# Parse the expression
-result = parse_expression(expression_string)
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) != 2:
+        print("Usage: python ex1.py '<expression>'")
+        sys.exit(1)
 
-# Print the result
-print(result)
+    expression = sys.argv[1]
+    result = evaluate_expression(expression)
+    print(result)
