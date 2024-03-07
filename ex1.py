@@ -1,47 +1,43 @@
-# Function to check if a character is a digit
-def is_digit(char):
-  return char.isdigit()
+import sys
 
-# Function to check if a character is an operand
-def is_operand(char):
-  return char in "+-*/"
+def tokenize(expr):
+    # Replace '(' and ')' with ' ( ' and ' ) ' respectively and split
+    expr = expr.replace('(', ' ( ').replace(')', ' ) ')
+    return expr.split()
 
-# Main parsing function
-def parse_expression(expression):
-  stack = []
-  for char in expression:
-    if is_digit(char):
-      # Add number to the stack
-      number = int(char)
-      stack.append(number)
-    elif is_operand(char):
-      # Pop two elements from the stack, perform operation, and push result back
-      operand2 = stack.pop()
-      operand1 = stack.pop()
-      result = perform_operation(char, operand1, operand2)
-      stack.append(result)
-    # Handle errors: invalid characters, unbalanced parentheses, etc.
-  # Check if the stack contains only one element (final result)
-  if len(stack) == 1:
+def evaluate(tokens):
+    stack = []
+    
+    operators = {
+        '+': lambda x, y: x + y,
+        '-': lambda x, y: x - y,
+        '*': lambda x, y: x * y,
+        '/': lambda x, y: x / y,
+    }
+    
+    for token in tokens:
+        if token in operators:
+            # It's an operator
+            y, x = stack.pop(), stack.pop()  # Pay attention to the order
+            stack.append(operators[token](x, y))
+        elif token == '(':
+            # No action needed for opening bracket in this approach
+            continue
+        elif token == ')':
+            # End of a sub-expression; nothing to do in this simplified logic
+            continue
+        else:
+            # It's a numeric value
+            stack.append(int(token))
+    
     return stack.pop()
-  else:
-    # Handle errors: unprocessed elements in the stack
-    raise ValueError("Invalid expression")
 
-# Function to perform the operation based on the operand
-def perform_operation(operand, operand1, operand2):
-  if operand == "+":
-    return operand1 + operand2
-  # Implement similar logic for other operands
-  # ...
-  else:
-    raise ValueError("Unsupported operand")
+def evaluate_expression(expr):
+    tokens = tokenize(expr)
+    # Reverse the tokens for right-to-left evaluation
+    return evaluate(reversed(tokens))
 
-# Get expression string from command line arguments (replace with actual method)
-expression_string = "10 + 20 * 3"
-
-# Parse the expression
-result = parse_expression(expression_string)
-
-# Print the result
-print(result)
+if __name__ == "__main__":
+    expr = sys.argv[1]  # Assuming the expression is passed as a command-line argument
+    result = evaluate_expression(expr)
+    print(result)
