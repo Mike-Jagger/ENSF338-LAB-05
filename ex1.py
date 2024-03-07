@@ -1,43 +1,53 @@
 import sys
 
-def tokenize(expr):
-    # Replace '(' and ')' with ' ( ' and ' ) ' respectively and split
-    expr = expr.replace('(', ' ( ').replace(')', ' ) ')
-    return expr.split()
+class Stack:
+    def __init__(self):
+        self.items = []
 
-def evaluate(tokens):
-    stack = []
-    
-    operators = {
-        '+': lambda x, y: x + y,
-        '-': lambda x, y: x - y,
-        '*': lambda x, y: x * y,
-        '/': lambda x, y: x / y,
-    }
-    
-    for token in tokens:
-        if token in operators:
-            # It's an operator
-            y, x = stack.pop(), stack.pop()  # Pay attention to the order
-            stack.append(operators[token](x, y))
-        elif token == '(':
-            # No action needed for opening bracket in this approach
-            continue
-        elif token == ')':
-            # End of a sub-expression; nothing to do in this simplified logic
-            continue
+    def is_empty(self):
+        return len(self.items) == 0
+
+    def push(self, item):
+        self.items.append(item)
+
+    def pop(self):
+        if not self.is_empty():
+            return self.items.pop()
+        raise IndexError("pop from empty stack")
+
+    def peek(self):
+        if not self.is_empty():
+            return self.items[-1]
+        raise IndexError("peek from empty stack")
+
+def compute(expression):
+    stack = Stack()
+    tokens = expression.split()
+    for token in reversed(tokens):
+        if token in "+-*/":
+            operand1 = stack.pop()
+            operand2 = stack.pop()
+            if token == '+':
+                stack.push(operand1 + operand2)
+            elif token == '-':
+                stack.push(operand1 - operand2)
+            elif token == '*':
+                stack.push(operand1 * operand2)
+            elif token == '/':
+                stack.push(operand1 / operand2)
         else:
-            # It's a numeric value
-            stack.append(int(token))
-    
+            stack.push(int(token))
     return stack.pop()
 
-def evaluate_expression(expr):
-    tokens = tokenize(expr)
-    # Reverse the tokens for right-to-left evaluation
-    return evaluate(reversed(tokens))
+def parse_expression(expression):
+    expression = expression.replace('(', ' ').replace(')', ' ')
+    return compute(expression)
 
 if __name__ == "__main__":
-    expr = sys.argv[1]  # Assuming the expression is passed as a command-line argument
-    result = evaluate_expression(expr)
+    if len(sys.argv) != 2:
+        print("Usage: python ex1.py 'expression'")
+        sys.exit(1)
+
+    expression = sys.argv[1]
+    result = parse_expression(expression)
     print(result)
