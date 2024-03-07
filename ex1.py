@@ -1,17 +1,25 @@
+import sys
+
 class Stack:
     def __init__(self):
-        self.items = []
+        self.items = []  
+
+    def is_empty(self):
+        return len(self.items) == 0
 
     def push(self, item):
+        # Add an item to the top of the stack
         self.items.append(item)
 
     def pop(self):
+        # Remove and return the top item of the stack. If the stack is empty, raise an error.
         if not self.is_empty():
             return self.items.pop()
         else:
             return None
 
     def peek(self):
+        # Return the top item of the stack without removing it. If the stack is empty, raise an error.
         if not self.is_empty():
             return self.items[-1]
         else:
@@ -20,62 +28,35 @@ class Stack:
     def is_empty(self):
         return len(self.items) == 0
 
-def evaluate_expression(expression):
+def compute(expression):
     stack = Stack()
     tokens = expression.split()
-    for token in tokens:
-        if token.isdigit() or (token[0] == '-' and token[1:].isdigit()):
+    for token in reversed(tokens):
+        if token in "+-*/":
+            operand1 = stack.pop()
+            operand2 = stack.pop()
+            if token == '+':
+                stack.push(operand1 + operand2)
+            elif token == '-':
+                stack.push(operand1 - operand2)
+            elif token == '*':
+                stack.push(operand1 * operand2)
+            elif token == '/':
+                stack.push(operand1 / operand2)
+        else:
             stack.push(int(token))
-        elif token in ['+', '-', '*', '/']:
-            stack.push(token)
-        elif token == '(':
-            continue
-        elif token == ')':
-            subexpression_result = evaluate_subexpression(stack)
-            if subexpression_result is not None:
-                stack.push(subexpression_result)
-            else:
-                return "Error: Invalid expression format"
     return stack.pop()
 
-def evaluate_subexpression(stack):
-    operator = stack.pop()
-    if operator not in ['+', '-', '*', '/']:
-        return None
-    
-    operands = []
-    while isinstance(stack.peek(), int):
-        operands.append(stack.pop())
-    operands.reverse()
-
-    if len(operands) < 2:
-        return None
-    
-    if operator == '+':
-        return sum(operands)
-    elif operator == '-':
-        return operands[0] - sum(operands[1:])
-    elif operator == '*':
-        result = 1
-        for operand in operands:
-            result *= operand
-        return result
-    elif operator == '/':
-        result = operands[0]
-        for operand in operands[1:]:
-            if operand == 0:
-                return "Error: Division by zero"
-            result /= operand
-        return result
-    else:
-        return None
+def parse_expression(expression):
+    expression = expression.replace('(', ' ').replace(')', ' ')
+    return compute(expression)
 
 if __name__ == "__main__":
     import sys
     if len(sys.argv) != 2:
-        print("Usage: python ex1.py '<expression>'")
+        print("Usage: python ex1.py 'expression'")
         sys.exit(1)
 
     expression = sys.argv[1]
-    result = evaluate_expression(expression)
+    result = parse_expression(expression)
     print(result)
